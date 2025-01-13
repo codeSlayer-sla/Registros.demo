@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registros de Cronómetros</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        td {
+            background-color: #f1f1f1;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Registros de Cronómetros</h1>
+        
+        <!-- Tabla para mostrar los registros -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Tiempo Transcurrido</th>
+                    <th>Última Actualización</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cronometro in cronometros %}
+                    <tr>
+                        <td>{{ cronometro['tiempo'] }} segundos</td>
+                        <td>{{ cronometro['ultima_actualizacion'] }}</td>
+                        <td>{{ cronometro['estado'] }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

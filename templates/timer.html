@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronómetro con Modal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .cronometro {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+
+        /* Estilos para el modal */
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .modal-button {
+            padding: 10px 20px;
+            font-size: 1em;
+            margin: 10px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .modal-button.close {
+            background-color: #dc3545;
+        }
+        .user-info {
+            position: absolute;  /* Asegura que el contenedor esté posicionado respecto al borde */
+            top: 10px;
+            left: 10px;
+            font-size: 1.1em;
+            color: #333;
+            z-index: 10; /* Asegura que la información esté por encima de otros elementos */
+        }
+    </style>
+</head>
+<body>
+    {% if session["user"] %}
+        <div class="user-info">
+            <strong>{{ session["user"]["name"] }}</strong><br>
+            {{ session["user"]["email"] }}
+        </div>
+    {% endif %}
+
+    <div class="cronometro" id="cronometro">00:00</div>
+    <button id="pausarReanudar" onclick="pausarReanudar()">Pausar</button>
+    <button id="detener" onclick="detener()">Detener</button>
+    <button id="NuevoCr" onclick="NuevoRe()">Nuevo registro</button>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <h2>Selecciona una opción</h2>
+            <button class="modal-button" onclick="opcionInvestigacion()">Tiempo de Investigación</button>
+            <button class="modal-button" onclick="opcionSoporte()">Sesión de Soporte</button>
+            <button class="modal-button close" onclick="cerrarModal()">Cerrar</button>
+        </div>
+    </div>
+
+    <script>
+        // Variables para manejar el cronómetro
+        let tiempo = localStorage.getItem('tiempo') ? parseInt(localStorage.getItem('tiempo')) : 0; // Recuperar el tiempo guardado en localStorage, o iniciar en 0
+        let intervalo;
+        let pausado = false; // si el cronómetro está pausado
+
+        // Función para actualizar el cronómetro en pantalla
+        function actualizarCronometro() {
+            let minutos = Math.floor(tiempo / 60);
+            let segundos = tiempo % 60;
+            if (segundos < 10) {
+                segundos = "0" + segundos;
+            }
+            document.getElementById("cronometro").innerText = `${minutos}:${segundos}`;
+        }
+
+        // Función para iniciar el cronómetro al cargar la página
+        window.onload = function() {
+            intervalo = setInterval(function() {
+                if (!pausado) {
+                    tiempo++;
+                    actualizarCronometro();
+                    localStorage.setItem('tiempo', tiempo); // Guardar el tiempo cada segundo
+                }
+            }, 1000); // El cronómetro avanza cada segundo
+        }
+
+        // Función para pausar o reanudar el cronómetro
+        function pausarReanudar() {
+            if (pausado) {
+                pausado = false;
+                document.getElementById("pausarReanudar").innerText = "Pausar";
+                document.getElementById("detener").disabled = false;
+            } else {
+                pausado = true;
+                document.getElementById("pausarReanudar").innerText = "Reanudar";
+            }
+        }
+
+        // Función para detener el cronómetro
+        function detener() {
+            clearInterval(intervalo);
+            document.getElementById("pausarReanudar").disabled = true;
+            document.getElementById("detener").disabled = true;
+            abrirModal(); // Abrir el modal cuando se detiene el cronómetro
+        }
+
+        // Función para abrir el modal
+        function abrirModal() {
+            document.getElementById("myModal").style.display = "block";
+        }
+
+        // Función para cerrar el modal
+        function cerrarModal() {
+            window.location.href = "/"; 
+        }
+
+        // Función para manejar la opción "Tiempo de Investigación"
+        function opcionInvestigacion() {
+            alert("Has seleccionado 'Tiempo de Investigación'");
+            cerrarModal(); // Cerrar el modal después de seleccionar
+        }
+
+        // Función para manejar la opción "Sesión de Soporte"
+        function opcionSoporte() {
+            alert("Has seleccionado 'Sesión de Soporte'");
+            cerrarModal(); // Cerrar el modal después de seleccionar
+        }
+        function GuardarRe(){
+
+        }
+        function NuevoRe(){
+            GuardarRe()
+            window.location.href = "/timer"; 
+
+        }
+    </script>
+
+</body>
+</html>
