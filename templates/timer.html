@@ -5,6 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cronómetro con Modal</title>
     <style>
+        
+        .popup {
+            display: flex; 
+            position: static;
+            top: 50;
+            left: 10;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .popup-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 80%;
+            
+            max-width: 400px;
+        }
+
+        .popup-content select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .popup-content button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -15,7 +53,12 @@
             margin: 0;
             background-color: #f0f0f0;
         }
+        #chrono{
+            display: none;
+        }
+        
         .cronometro {
+            display: block;
             font-size: 2em;
             margin-bottom: 20px;
         }
@@ -32,6 +75,26 @@
         button:disabled {
             background-color: #ddd;
             cursor: not-allowed;
+        }
+        /* Botón Pausar/Reanudar */
+
+        #pausarReanudar{
+            background-color: red;
+        }
+        #pausarReanudar.paused {
+            background-color: green; /* Fondo verde cuando está pausado */
+            color: white;
+        }
+        #pausarReanudar.running {
+            background-color: red; /* Fondo rojo cuando está en ejecución */
+            color: white;
+        }
+
+        /* Botón Detener */
+        #detener {
+            background-color: red;
+            color: white;
+            cursor: pointer;
         }
 
         /* Estilos para el modal */
@@ -81,7 +144,33 @@
             color: #333;
             z-index: 10; /* Asegura que la información esté por encima de otros elementos */
         }
+        .navbar {
+            display: flex;
+            justify-content: center;
+            position: absolute;  /* Asegura que el contenedor esté posicionado respecto al borde */
+            top: 20px;
+            
+            margin-bottom: 20px;
+        }
+        .navbar button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 1.1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .navbar button:hover {
+            background-color: #0056b3;
+        }
     </style>
+    <div class="navbar">
+        <a href="/"><button>Inicio</button></a>
+        <a onclick="Cierra()"><button>Nuevo Registro</button></a>
+        <a href="/logout"><button>Desconectar</button></a>
+    </div>
 </head>
 <body>
     {% if session["user"] %}
@@ -90,11 +179,45 @@
             {{ session["user"]["email"] }}
         </div>
     {% endif %}
+    {% if  not modal %}
 
-    <div class="cronometro" id="cronometro">00:00</div>
-    <button id="pausarReanudar" onclick="pausarReanudar()">Pausar</button>
-    <button id="detener" onclick="detener()">Detener</button>
-    <button id="NuevoCr" onclick="NuevoRe()">Nuevo registro</button>
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <h2>Seleccionar Cliente y Software</h2>
+            <form id="formSeleccionar">
+                <div>
+                    <label for="cliente">Cliente</label>
+                    <select id="cliente" name="cliente">
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente }}">{{ cliente }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="software">Software</label>
+                    <select id="software" name="software">
+                        {% for software in softwares %}
+                            <option value="{{ software }}">{{ software }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" onclick="empezar()">Empezar</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div id="chrono">
+        
+        <div class="cronometro" id="cronometro">00:00</div>
+        
+            <button id="pausarReanudar" onclick="pausarReanudar()">Pausar</button>
+            <button id="detener" onclick="detener()">Detener</button>
+    </div>
+        
+        
+        
+    
 
     <!-- Modal -->
     <div id="myModal" class="modal">
@@ -102,6 +225,7 @@
             <h2>Selecciona una opción</h2>
             <button class="modal-button" onclick="opcionInvestigacion()">Tiempo de Investigación</button>
             <button class="modal-button" onclick="opcionSoporte()">Sesión de Soporte</button>
+            <br>
             <button class="modal-button close" onclick="cerrarModal()">Cerrar</button>
         </div>
     </div>
@@ -121,9 +245,10 @@
             }
             document.getElementById("cronometro").innerText = `${minutos}:${segundos}`;
         }
+        
 
         // Función para iniciar el cronómetro al cargar la página
-        window.onload = function() {
+        function iniciarCr() {
             intervalo = setInterval(function() {
                 if (!pausado) {
                     tiempo++;
@@ -132,16 +257,31 @@
                 }
             }, 1000); // El cronómetro avanza cada segundo
         }
+        window.onload = function() {
+            // Comprobar si el id_timer existe en la sesión
+            fetch('/check_id_timer')
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.id_timer) {
+                        // Si no existe id_timer, mostrar el popup
+                        document.getElementById('popup').style.display = 'flex';
+                    }
+                });
+        }
 
         // Función para pausar o reanudar el cronómetro
         function pausarReanudar() {
             if (pausado) {
                 pausado = false;
                 document.getElementById("pausarReanudar").innerText = "Pausar";
+                document.getElementById("pausarReanudar").classList.remove("paused");
+                document.getElementById("pausarReanudar").classList.add("running");
                 document.getElementById("detener").disabled = false;
             } else {
                 pausado = true;
                 document.getElementById("pausarReanudar").innerText = "Reanudar";
+                document.getElementById("pausarReanudar").classList.remove("running");
+                document.getElementById("pausarReanudar").classList.add("paused");
             }
         }
 
@@ -160,7 +300,16 @@
 
         // Función para cerrar el modal
         function cerrarModal() {
+            // Limpiar el cronómetro en el navegador (localStorage)
+            localStorage.removeItem('tiempo');  // Limpiar el tiempo guardado en localStorage
+            tiempo = 0;  // Reiniciar el valor del cronómetro
             window.location.href = "/"; 
+        }
+        function Cierra(){
+            localStorage.removeItem('tiempo');  // Limpiar el tiempo guardado en localStorage
+            tiempo = 0;  // Reiniciar el valor del cronómetro
+            window.location.href = "/timer"; 
+
         }
 
         // Función para manejar la opción "Tiempo de Investigación"
@@ -174,14 +323,86 @@
             alert("Has seleccionado 'Sesión de Soporte'");
             cerrarModal(); // Cerrar el modal después de seleccionar
         }
-        function GuardarRe(){
+        function GuardarTiempo() {
 
+            // Pausar el cronómetro si está corriendo
+            pausado = true;
+            document.getElementById("pausarReanudar").innerText = "Reanudar";
+            document.getElementById("detener").disabled = true;
+
+            // Crear un formulario oculto para enviar los datos del cronómetro al backend
+            var form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/guardar_registro";
+
+            // Crear un campo para el tiempo
+            var tiempoField = document.createElement("input");
+            tiempoField.type = "hidden";
+            tiempoField.name = "tiempo";
+            tiempoField.value = tiempo;  // El tiempo actual del cronómetro
+
+            // Crear un campo para el estado
+            var estadoField = document.createElement("input");
+            estadoField.type = "hidden";
+            estadoField.name = "estado";
+            estadoField.value = "Pausado";  // Estado "Pausado" al guardar el registro
+
+            // Agregar los campos al formulario
+            form.appendChild(tiempoField);
+            form.appendChild(estadoField);
+            // Limpiar el cronómetro en el navegador (localStorage)
+            localStorage.removeItem('tiempo');  // Limpiar el tiempo guardado en localStorage
+            tiempo = 0;  // Reiniciar el valor del cronómetro
+
+            // Enviar el formulario
+            document.body.appendChild(form);
+            form.submit();
         }
+
         function NuevoRe(){
-            GuardarRe()
-            window.location.href = "/timer"; 
+            GuardarTiempo()
+            
 
         }
+        function empezar() {
+
+            // Obtener el cliente y software seleccionados en el formulario
+            const cliente = document.getElementById("cliente").value;
+            const software = document.getElementById("software").value;
+
+            // Enviar los datos al backend para crear un id_timer
+            fetch('/Crear_Id', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({
+                    cliente: cliente,
+                    software: software
+                })
+            })
+            .then(response => response.json())  // Convertir la respuesta a JSON
+            .then(data => {
+                const id_timer = data.id_timer;
+                console.log('ID Timer creado:', id_timer);
+
+                // Aquí puedes guardar id_timer en localStorage si lo necesitas
+                localStorage.setItem('id_timer', id_timer);
+
+                // Luego de crear el ID, eliminar el popup y mostrar el cronómetro
+                document.getElementById('popup').style.display = 'none';
+                document.getElementById('chrono').style.display = 'block';
+
+                // Iniciar el cronómetro
+                iniciarCr();
+            })
+            .catch(error => {
+                console.error('Error al crear el ID:', error);
+            });
+        }
+
+
+
     </script>
 
 </body>
