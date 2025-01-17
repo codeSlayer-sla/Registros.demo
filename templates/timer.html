@@ -105,6 +105,7 @@
         #tareaForm{
             display: none;
         }
+        
 
         /* Estilos para el modal */
         .modal {
@@ -195,9 +196,28 @@
             <h2>Seleccionar Cliente y Software</h2>
             <form id="formSeleccionar">
                 <div>
-                    <label for="tarea">Este cronometro pertenece a una tarea existente?</label>
+                    
+                    <label for="cliente">Cliente</label>
+                    <select id="cliente" name="cliente">
+                        <option selected="selected" disabled="disabled" >seleccion un software</option>
+                        {% for cliente in clientes %}
+                            <option value="{{ cliente }}">{{ cliente }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="software">Software</label>
+                    <select id="software" name="software" >
+                        <option selected="selected" disabled="disabled" >seleccion un cliente</option>
+                        {% for software in softwares %}
+                            <option value="{{ software }}">{{ software }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <label for="tarea">¿Este cronometro pertenece a una tarea existente?</label>
                     <br><br>
-                    <button type="button" id="SI" onclick="Tareas_existentes()">si</button>
+                    <button type="button" id="SI" class="SI" onclick="Tareas_existentes()">si</button>
                     <button type="button" id="NO" onclick="Nuevatarea()">no</button><br>
                     <label id="Qtarea">Elige a que tarea pertenece</label>
                     <br>
@@ -207,26 +227,13 @@
                         {% endfor %}
                     </select>
                     <div id="tareaForm">
-                        <label for="nombreTarea">Nombre de la tarea:</label>
-                        <input type="text" id="nombreTarea" required>
+                        <label for="nombreTarea" id="nombreTarea">Descripción de la tarea:</label>
+                        <input type="text" id="nombreTarea" min="4" maxlength="75" size="50"  required>
+                        <span class="validity"></span>
+                        <p>La Descripción debe ser en minusculas y de 4 a 50 caracteres.</p>
                     </div>
-                    <br>
-                    <label for="cliente">Cliente</label>
-                    <select id="cliente" name="cliente">
-                        {% for cliente in clientes %}
-                            <option value="{{ cliente }}">{{ cliente }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label for="software">Software</label>
-                    <select id="software" name="software">
-                        {% for software in softwares %}
-                            <option value="{{ software }}">{{ software }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
                 <button type="button" onclick="empezar()">Empezar</button>
+                
             </form>
         </div>
     </div>
@@ -349,15 +356,43 @@
             cerrarModal(); // Cerrar el modal después de seleccionar
         }
         function Tareas_existentes(){
+        
             document.getElementById("Tarea").style.display="block"
             document.getElementById("Qtarea").style.display="block"
             document.getElementById("NO").disabled=true;
         }
         function Nuevatarea(){
+            boton_no=true
             document.getElementById("SI").disabled=true;
             document.getElementById("tareaForm").style.display="block"
 
 
+        }
+        boton_no=false
+        // Función para verificar las selecciones de Cliente y Software
+        function verificarSeleccion() {
+            const cliente = document.getElementById("cliente").value;
+            const software = document.getElementById("software").value;
+            const valorDefaultCliente = document.getElementById("cliente").options[0].value;
+            const valorDefaultSoftware = document.getElementById("software").options[0].value;
+
+            // Verificar si ambos campos tienen valores diferentes a los predeterminados
+            if ((cliente !== valorDefaultCliente && software !== valorDefaultSoftware) && (!boton_no)) {
+                document.getElementById("SI").disabled = false;
+                
+            } else {
+                
+                document.getElementById("SI").disabled = true;
+                
+            }
+        }
+
+        document.getElementById("cliente").addEventListener("change", verificarSeleccion);
+        document.getElementById("software").addEventListener("change", verificarSeleccion);
+
+        // Llamar la función al cargar la página
+        window.onload = function() {
+            verificarSeleccion();
         }
         function GuardarTiempo() {
 
@@ -401,23 +436,40 @@
 
         }
         function empezar() {
-
-            // Obtener el cliente y software seleccionados en el formulario
+            
+            
+            // Obtener el cliente y software seleccionados en los formularios
+            const username = "{{ session['user']['name'] }}";
             const cliente = document.getElementById("cliente").value;
             const software = document.getElementById("software").value;
-            if (nombreTarea.value === "") {
-                alert("Por favor ingresa un nombre para la tarea.");}
-            else{
+            const nombreTarea = document.getElementById("nombreTarea").value;
+            const tareaExistente = document.getElementById("Tarea").value;
+            let tareaParaGuardar = tareaExistente || nombreTarea;  // Usar la tarea seleccionada o el nombre ingresado
+
+            // Verificar que haya una tarea seleccionada o un nombre de tarea ingresado
+            if (!tareaParaGuardar) {
+                alert("Por favor ingresa un nombre para la tarea o selecciona una tarea existente.");
+                return;
+            }
+            const valorDefaultCliente = document.getElementById("cliente").options[0].value;
+            const valorDefaultSoftware = document.getElementById("software").options[0].value;
+
+            if (cliente === valorDefaultCliente || software === valorDefaultSoftware) {
+                alert("Por favor selecciona un cliente y un software válidos.");
+                return; // Detener la ejecución si los valores seleccionados no son válidos
+            }
 
                 // Enviar los datos al backend para crear un id_timer
-                fetch('/Crear_Id', {
+                fetch("http://localhost:5050/Crear_Id", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json' 
                     },
                     body: JSON.stringify({
                         cliente: cliente,
-                        software: software
+                        software: software,
+                        Descripcion:tareaParaGuardar,
+                        username:username
                     })
                 })
                 .then(response => response.json())  // Convertir la respuesta a JSON
@@ -438,7 +490,7 @@
                 .catch(error => {
                     console.error('Error al crear el ID:', error);
                 });
-            }
+            
         }
 
 

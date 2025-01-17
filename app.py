@@ -10,38 +10,38 @@ from datetime import datetime
 conn=sqlite3.connect("Registros_cronometros")
 cursor=conn.cursor()
 # Crear la tabla solo si no existe
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS Tareas (
-        id_tarea text PRIMARY KEY,
-        id_timer TEXT,      
-        Usuario TEXT,
-        Cliente TEXT,
-        Software TEXT,                     
-        Creacion TEXT,                  
-        Tiempo_transcurrido TEXT,       
-        Finalizacion TEXT,
-        Razon TEXT,              
-        Estado TEXT                  
-    )
-""")
+# cursor.execute("""
+#     CREATE TABLE IF NOT EXISTS Tareas (
+#         id_tarea text PRIMARY KEY,
+#         id_timer TEXT,      
+#         Usuario TEXT,
+#         Cliente TEXT,
+#         Software TEXT,                     
+#         Creacion TEXT,                  
+#         Tiempo_transcurrido TEXT,       
+#         Finalizacion TEXT,
+#         Razon TEXT,              
+#         Estado TEXT                  
+#     )
+# """)
 #Verificar la estructura de la tabla 'cronometros'
 cursor.execute("PRAGMA table_info(Tareas);")
 columns = cursor.fetchall()
 print("\nEstructura de la tabla 'Tareas':")
 for column in columns:
-     print(column)
-#Verificar que el dato se haya insertado correctamente
+       print(column)
+# #Verificar que el dato se haya insertado correctamente
 cursor.execute("SELECT * FROM Tareas")
-result = cursor.fetchone()  # Obtener el registro insertado
+result = cursor.fetchall()  # Obtener el registro insertado
 
-# Imprimir los datos guardados para verificar
+#Imprimir los datos guardados para verificar
 print(f"Datos guardados en la base de datos: {result}")  # Esto imprime los datos de la fila insertada
 
 conn.close()
 
 # Confirmar los cambios y cerrar la conexión
 # conn.commit()
-conn.close()
+# conn.close()
 ####################################################################################################################################
 app = Flask(__name__)
 app.config.from_object(app_config)
@@ -92,7 +92,6 @@ def auth_response():
     print(user_info.get("preferred_username"))
 
     return redirect(url_for("index"))
-
 
 @app.route("/logout")
 def logout():
@@ -153,13 +152,14 @@ def ver_registros():
 def crear_id():
     data = request.get_json()  # Obtener los datos JSON de la solicitud
     print(f"Datos recibidos: {data}")  # Imprimir los datos recibidos para depuración
-
+    
     # Generar un nuevo id_timer (UUID)
     id_timer = str(uuid.uuid4())  # Genera un ID único
     id_tarea = str(uuid.uuid4())  # Genera un ID único para la tarea
-    client_id = session.get('CLIENT_ID')
+    Usuario = request.json.get("username")
     cliente = request.json.get('cliente')
     software = request.json.get('software')
+    Descripcion=request.json.get("Descripcion")
 
     # Crear una fecha de creación
     creacion = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
@@ -168,9 +168,9 @@ def crear_id():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO cronometros_test (id_timer,Usuario, Cliente, Software, Creacion, Estado)
-        VALUES (?, ? , ?, ?, ?, ?)
-    """, (id_timer,client_id, cliente, software, creacion, 'Activo'))
+        INSERT INTO Tareas (id_tarea,id_timer,Descripcion,Usuario, Cliente, Software, Creacion, Estado)
+        VALUES (?, ? , ?, ?, ?, ?, ? , ? )
+    """, (id_tarea,id_timer,Descripcion,Usuario, cliente, software, creacion, 'Activo'))
     conn.commit()
     conn.close()
 
