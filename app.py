@@ -7,31 +7,31 @@ from flask_session import Session
 import sqlite3
 import app_config
 from datetime import datetime
-
 conn=sqlite3.connect("Registros_cronometros")
 cursor=conn.cursor()
-# # Crear la tabla solo si no existe
-# cursor.execute("""
-#     CREATE TABLE IF NOT EXISTS cronometros_test (
-#         id_timer TEXT PRIMARY KEY,      
-#         Usuario TEXT,
-#         Cliente TEXT,
-#         Software TEXT,                     
-#         Creacion TEXT,                  
-#         Tiempo_transcurrido TEXT,       
-#         Finalizacion TEXT,
-#         Razon TEXT,              
-#         Estado TEXT                  
-#     )
-# """)
-# Verificar la estructura de la tabla 'cronometros'
-# cursor.execute("PRAGMA table_info(cronometros_test);")
-# columns = cursor.fetchall()
-# print("\nEstructura de la tabla 'cronometros_test':")
-# for column in columns:
-#      print(column)
-# Verificar que el dato se haya insertado correctamente
-cursor.execute("SELECT * FROM cronometros_test")
+# Crear la tabla solo si no existe
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS Tareas (
+        id_tarea text PRIMARY KEY,
+        id_timer TEXT,      
+        Usuario TEXT,
+        Cliente TEXT,
+        Software TEXT,                     
+        Creacion TEXT,                  
+        Tiempo_transcurrido TEXT,       
+        Finalizacion TEXT,
+        Razon TEXT,              
+        Estado TEXT                  
+    )
+""")
+#Verificar la estructura de la tabla 'cronometros'
+cursor.execute("PRAGMA table_info(Tareas);")
+columns = cursor.fetchall()
+print("\nEstructura de la tabla 'Tareas':")
+for column in columns:
+     print(column)
+#Verificar que el dato se haya insertado correctamente
+cursor.execute("SELECT * FROM Tareas")
 result = cursor.fetchone()  # Obtener el registro insertado
 
 # Imprimir los datos guardados para verificar
@@ -42,12 +42,14 @@ conn.close()
 # Confirmar los cambios y cerrar la conexión
 # conn.commit()
 conn.close()
+####################################################################################################################################
 app = Flask(__name__)
 app.config.from_object(app_config)
 Session(app)
 # Simulando listas de clientes y softwares
 clientes = ['Cliente 1', 'Cliente 2', 'Cliente 3']
 softwares = ['Software A', 'Software B', 'Software C']
+tareas=["soporteMIBUS","InvestigacionMIVIOT"]
 
 # This section is needed for url_for("foo", _external=True) to automatically
 # generate http scheme when this sample is running on localhost,
@@ -100,14 +102,9 @@ def logout():
 def timer():
     if 'id_timer'  not in session:
         # Si no existe, mostrar el modal en el frontend
-        return render_template('timer.html', clientes=clientes, softwares=softwares,modal=True)
+        return render_template('timer.html', clientes=clientes, softwares=softwares,tareas=tareas,modal=True)
     else:
-        return render_template('timer.html',modal=False, clientes=clientes, softwares=softwares)
-
-    
-
-
-
+        return render_template('timer.html',modal=False, clientes=clientes,tareas=tareas,softwares=softwares)
 
 @app.route("/")
 def index():
@@ -119,9 +116,6 @@ def index():
     if not auth.get_user():
         return redirect(url_for("login"))
     return render_template('registros.html', user=auth.get_user(), version=identity.__version__,cronometros=cronometros)
-
-
-
 
 @app.route("/guardar_registro", methods=["POST"])
 def guardar_registro():
@@ -162,6 +156,7 @@ def crear_id():
 
     # Generar un nuevo id_timer (UUID)
     id_timer = str(uuid.uuid4())  # Genera un ID único
+    id_tarea = str(uuid.uuid4())  # Genera un ID único para la tarea
     client_id = session.get('CLIENT_ID')
     cliente = request.json.get('cliente')
     software = request.json.get('software')
@@ -174,17 +169,13 @@ def crear_id():
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO cronometros_test (id_timer,Usuario, Cliente, Software, Creacion, Estado)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (?, ? , ?, ?, ?, ?)
     """, (id_timer,client_id, cliente, software, creacion, 'Activo'))
     conn.commit()
     conn.close()
 
     # Devolver el id_timer creado al frontend
     return jsonify({'id_timer': id_timer}), 200
-    
-    
-    
-
 
 @app.route("/check_id_timer", methods=["GET"])
 def check_id_timer():

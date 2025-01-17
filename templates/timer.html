@@ -96,6 +96,15 @@
             color: white;
             cursor: pointer;
         }
+        #Tarea{
+            display: none;
+        }
+        #Qtarea{
+            display: none;
+        }
+        #tareaForm{
+            display: none;
+        }
 
         /* Estilos para el modal */
         .modal {
@@ -186,6 +195,22 @@
             <h2>Seleccionar Cliente y Software</h2>
             <form id="formSeleccionar">
                 <div>
+                    <label for="tarea">Este cronometro pertenece a una tarea existente?</label>
+                    <br><br>
+                    <button type="button" id="SI" onclick="Tareas_existentes()">si</button>
+                    <button type="button" id="NO" onclick="Nuevatarea()">no</button><br>
+                    <label id="Qtarea">Elige a que tarea pertenece</label>
+                    <br>
+                    <select  id="Tarea">
+                        {% for tarea in tareas %}
+                            <option value="{{tarea}}">{{tarea}}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="tareaForm">
+                        <label for="nombreTarea">Nombre de la tarea:</label>
+                        <input type="text" id="nombreTarea" required>
+                    </div>
+                    <br>
                     <label for="cliente">Cliente</label>
                     <select id="cliente" name="cliente">
                         {% for cliente in clientes %}
@@ -323,6 +348,17 @@
             alert("Has seleccionado 'Sesión de Soporte'");
             cerrarModal(); // Cerrar el modal después de seleccionar
         }
+        function Tareas_existentes(){
+            document.getElementById("Tarea").style.display="block"
+            document.getElementById("Qtarea").style.display="block"
+            document.getElementById("NO").disabled=true;
+        }
+        function Nuevatarea(){
+            document.getElementById("SI").disabled=true;
+            document.getElementById("tareaForm").style.display="block"
+
+
+        }
         function GuardarTiempo() {
 
             // Pausar el cronómetro si está corriendo
@@ -369,36 +405,40 @@
             // Obtener el cliente y software seleccionados en el formulario
             const cliente = document.getElementById("cliente").value;
             const software = document.getElementById("software").value;
+            if (nombreTarea.value === "") {
+                alert("Por favor ingresa un nombre para la tarea.");}
+            else{
 
-            // Enviar los datos al backend para crear un id_timer
-            fetch('/Crear_Id', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json' 
-                },
-                body: JSON.stringify({
-                    cliente: cliente,
-                    software: software
+                // Enviar los datos al backend para crear un id_timer
+                fetch('/Crear_Id', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({
+                        cliente: cliente,
+                        software: software
+                    })
                 })
-            })
-            .then(response => response.json())  // Convertir la respuesta a JSON
-            .then(data => {
-                const id_timer = data.id_timer;
-                console.log('ID Timer creado:', id_timer);
+                .then(response => response.json())  // Convertir la respuesta a JSON
+                .then(data => {
+                    const id_timer = data.id_timer;
+                    console.log('ID Timer creado:', id_timer);
 
-                // Aquí puedes guardar id_timer en localStorage si lo necesitas
-                localStorage.setItem('id_timer', id_timer);
+                    // Aquí puedes guardar id_timer en localStorage si lo necesitas
+                    localStorage.setItem('id_timer', id_timer);
 
-                // Luego de crear el ID, eliminar el popup y mostrar el cronómetro
-                document.getElementById('popup').style.display = 'none';
-                document.getElementById('chrono').style.display = 'block';
+                    // Luego de crear el ID, eliminar el popup y mostrar el cronómetro
+                    document.getElementById('popup').style.display = 'none';
+                    document.getElementById('chrono').style.display = 'block';
 
-                // Iniciar el cronómetro
-                iniciarCr();
-            })
-            .catch(error => {
-                console.error('Error al crear el ID:', error);
-            });
+                    // Iniciar el cronómetro
+                    iniciarCr();
+                })
+                .catch(error => {
+                    console.error('Error al crear el ID:', error);
+                });
+            }
         }
 
 
